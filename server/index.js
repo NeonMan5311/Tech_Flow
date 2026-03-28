@@ -8,6 +8,7 @@
   const userRoutes = require("./routes/users");
   const forexRoutes = require("./routes/forex");
   const expenseRoutes = require("./routes/expenses");
+  const ledgerRoutes = require("./routes/ledger");
 
   const app = express();
   const PORT = process.env.PORT || 5000;
@@ -21,6 +22,7 @@
   app.use("/api/users", userRoutes);
   app.use("/api/forex", forexRoutes);
   app.use("/api/expenses", expenseRoutes);
+  app.use("/api/ledger", ledgerRoutes);
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });

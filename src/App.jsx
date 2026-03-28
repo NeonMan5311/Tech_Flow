@@ -130,7 +130,15 @@ function App() {
     const renderActiveTab = () => {
       switch (activeTab) {
         case 'Friends':
-          return <FriendsPage groups={groups} loading={groupsLoading} error={groupsError} />
+          return (
+            <FriendsPage
+              groups={groups}
+              loading={groupsLoading}
+              error={groupsError}
+              token={session.token}
+              session={session}
+            />
+          )
         case 'Groups':
           return (
             <GroupsPage
@@ -144,14 +152,22 @@ function App() {
         case 'Profile':
           return <ProfilePage />
         case 'Ledger':
-          return <LedgerPage groups={groups} loading={groupsLoading} error={groupsError} />
+          return (
+            <LedgerPage
+              groups={groups}
+              loading={groupsLoading}
+              error={groupsError}
+              token={session.token}
+              session={session}
+            />
+          )
         default:
           return <DashboardPage greeting={greeting} />
       }
     }
 
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="min-h-screen bg-slate-50 text-slate-900">
         <DashboardHeader onLogout={logout} onSelect={setActiveTab} activeTab={activeTab} />
         {renderActiveTab()}
       </div>
@@ -159,10 +175,10 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <MarketingHeader onOpenModal={openModal} />
       <MarketingLanding />
-      <footer className="border-t border-slate-800 px-6 py-10 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 px-6 py-10 text-center text-xs text-slate-500">
         Built for honest groups · © 2026 Split It Fair
       </footer>
 

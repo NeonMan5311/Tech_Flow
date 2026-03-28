@@ -8,6 +8,8 @@ const ledgerSchema = new mongoose.Schema(
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, required: true, uppercase: true, trim: true },
     settled: { type: Boolean, default: false },
+    settledAt: { type: Date },
+    note: { type: String, trim: true },
   },
   { timestamps: true }
 );

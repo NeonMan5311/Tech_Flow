@@ -97,32 +97,32 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-10">
-      <div className="w-full max-w-3xl rounded-3xl border border-slate-800 bg-slate-900 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-10 backdrop-blur">
+      <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-400">Add expense</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">{group.name}</h2>
-            <p className="mt-2 text-sm text-slate-400">Record a payment and split it fairly.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-600">Add expense</p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-900">{group.name}</h2>
+            <p className="mt-2 text-sm text-slate-600">Record a payment and split it fairly.</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 grid gap-6">
           <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-4">
               <div>
-                <label className="text-xs text-slate-400">Expense title</label>
+                <label className="text-xs text-slate-500">Expense title</label>
                 <input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
                   placeholder="Hotel booking"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-400">Total amount</label>
+                <label className="text-xs text-slate-500">Total amount</label>
                 <input
                   type="number"
                   min="0"
@@ -130,25 +130,25 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
                   value={amount}
                   onChange={(event) => setAmount(event.target.value)}
                   required
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
                   placeholder="2500"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-400">Currency</label>
+                <label className="text-xs text-slate-500">Currency</label>
                 <input
                   value={currency}
                   onChange={(event) => setCurrency(event.target.value.toUpperCase())}
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
                   placeholder="INR"
                 />
               </div>
               <div>
-                <label className="text-xs text-slate-400">Paid by</label>
+                <label className="text-xs text-slate-500">Paid by</label>
                 <select
                   value={paidBy}
                   onChange={(event) => setPaidBy(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
                 >
                   {group.members?.map((member) => (
                     <option key={member._id} value={member._id}>
@@ -159,13 +159,13 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
               </div>
             </div>
 
-            <div className="space-y-4 rounded-3xl border border-slate-800 bg-slate-950/50 p-4">
+            <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div>
-                <label className="text-xs text-slate-400">Split type</label>
+                <label className="text-xs text-slate-500">Split type</label>
                 <select
                   value={splitType}
                   onChange={(event) => setSplitType(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
                 >
                   {splitOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -177,10 +177,10 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
 
               {splitType === 'share' ? (
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-400">Shares per member</p>
+                  <p className="text-xs text-slate-500">Shares per member</p>
                   {group.members?.map((member) => (
                     <div key={member._id} className="flex items-center justify-between gap-3">
-                      <span className="text-xs text-slate-200">{member.name}</span>
+                      <span className="text-xs text-slate-700">{member.name}</span>
                       <input
                         type="number"
                         min="0"
@@ -191,7 +191,7 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
                             [member._id]: event.target.value,
                           }))
                         }
-                        className="w-20 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-white"
+                        className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
                       />
                     </div>
                   ))}
@@ -201,10 +201,10 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
 
               {splitType === 'percentage' ? (
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-400">Percent per member</p>
+                  <p className="text-xs text-slate-500">Percent per member</p>
                   {group.members?.map((member) => (
                     <div key={member._id} className="flex items-center justify-between gap-3">
-                      <span className="text-xs text-slate-200">{member.name}</span>
+                      <span className="text-xs text-slate-700">{member.name}</span>
                       <input
                         type="number"
                         min="0"
@@ -216,7 +216,7 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
                             [member._id]: event.target.value,
                           }))
                         }
-                        className="w-20 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-white"
+                        className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
                       />
                     </div>
                   ))}
@@ -226,10 +226,10 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
 
               {splitType === 'item' ? (
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-400">Items per member ("item1,item2 | amount")</p>
+                  <p className="text-xs text-slate-500">Items per member ("item1,item2 | amount")</p>
                   {group.members?.map((member) => (
                     <div key={member._id} className="grid gap-2">
-                      <span className="text-xs text-slate-200">{member.name}</span>
+                      <span className="text-xs text-slate-700">{member.name}</span>
                       <input
                         value={itemMap[member._id] ?? ''}
                         onChange={(event) =>
@@ -238,7 +238,7 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
                             [member._id]: event.target.value,
                           }))
                         }
-                        className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-white"
+                        className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
                         placeholder="Pizza, Drinks | 450"
                       />
                     </div>
@@ -247,7 +247,7 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
               ) : null}
 
               {splitType === 'equal' ? (
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-500">
                   Equal split across {group.members?.length || 0} members.
                 </p>
               ) : null}
@@ -260,14 +260,14 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100"
+              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-full bg-emerald-500 px-5 py-2 text-xs font-semibold text-slate-900 disabled:opacity-60"
+              className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:opacity-60"
             >
               {submitting ? 'Saving…' : 'Save expense'}
             </button>
