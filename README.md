@@ -1,16 +1,66 @@
-# React + Vite
+# 💸 FairSplit — Smart Expense Sharing Without the Headache
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> Equal splits aren’t always fair. FairSplit helps groups track, split, and settle expenses with clarity and minimal effort.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚨 Problem
 
-## React Compiler
+Managing shared expenses becomes messy when:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Equal splits don’t reflect real usage (diet, room size, etc.)
+- Multiple currencies cause confusion and approximation errors
+- Tracking “who owes whom” becomes mentally exhausting
+- Recurring costs require repeated manual entry
+- Lack of transparency leads to disputes
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ✅ Solution
+
+FairSplit provides a structured and transparent system to:
+
+- Split expenses fairly using multiple methods  
+- Handle multi-currency transactions automatically  
+- Simplify debts into minimal settlements  
+- Automate recurring expenses  
+- Maintain a clear and immutable ledger  
+
+---
+
+## ✨ Features
+
+### 🧾 Group Management
+- Create multiple groups (Trip, Flat, Office, etc.)
+- Add members by name
+- Isolated tracking per group
+
+---
+
+### 💰 Expense Logging
+Each expense includes:
+- Title  
+- Amount  
+- Currency  
+- Paid by  
+- Date  
+
+#### Supported Split Types:
+- Equal split  
+- Percentage-based  
+- Share-based (weighted splits)  
+- Item-level split  
+
+---
+
+### 🌍 Multi-Currency Support
+- Add expenses in different currencies  
+- Convert to a base currency  
+- Store conversion rate at the time of entry  
+
+---
+
+### 🔗 Debt Simplification
+- Computes net balances per user  
+- Minimizes number of transactions required  
+
