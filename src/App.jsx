@@ -169,7 +169,7 @@ function App() {
             />
           )
         default:
-          return <DashboardPage greeting={greeting} />
+          return <DashboardPage greeting={greeting} token={session.token} />
       }
     }
 

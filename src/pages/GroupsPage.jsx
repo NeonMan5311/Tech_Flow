@@ -8,6 +8,7 @@ function GroupsPage({ groups, setGroups, loading, error, token, onLedgerRefresh 
   const [expenseMap, setExpenseMap] = useState({})
   const [expenseLoading, setExpenseLoading] = useState({})
   const [expenseError, setExpenseError] = useState({})
+  const [simplifiedMap, setSimplifiedMap] = useState({})
 
   const handleCreated = (group) => {
     setGroups((prev) => [group, ...prev])
@@ -26,6 +27,7 @@ function GroupsPage({ groups, setGroups, loading, error, token, onLedgerRefresh 
         throw new Error(data?.message || 'Failed to fetch expenses')
       }
       setExpenseMap((prev) => ({ ...prev, [groupId]: data.expenses || [] }))
+      setSimplifiedMap((prev) => ({ ...prev, [groupId]: data.simplifiedSettlements || [] }))
       return data.expenses || []
     } catch (err) {
       setExpenseError((prev) => ({ ...prev, [groupId]: err.message }))
@@ -143,6 +145,24 @@ function GroupsPage({ groups, setGroups, loading, error, token, onLedgerRefresh 
 
               {expenseError[group._id] ? (
                 <p className="mt-3 text-xs text-rose-400">{expenseError[group._id]}</p>
+              ) : null}
+
+
+              {(simplifiedMap[group._id] || []).length ? (
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Optimized settlements</p>
+                  <div className="mt-2 space-y-1">
+                    {(simplifiedMap[group._id] || []).map((item, index) => {
+                      const fromName = group.members?.find((m) => m._id === item.from)?.name || 'Member'
+                      const toName = group.members?.find((m) => m._id === item.to)?.name || 'Member'
+                      return (
+                        <p key={`${item.from}-${item.to}-${index}`} className="text-xs text-emerald-800">
+                          {fromName} pays {toName}: {item.amount.toFixed(2)}
+                        </p>
+                      )
+                    })}
+                  </div>
+                </div>
               ) : null}
 
               {(expenseMap[group._id] || []).length ? (
