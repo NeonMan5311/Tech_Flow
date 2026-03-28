@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AuthModal, { initialForm } from './components/AuthModal'
 import DashboardHeader from './components/layout/DashboardHeader'
 import MarketingHeader from './components/layout/MarketingHeader'
@@ -22,6 +22,9 @@ function App() {
     return stored ? JSON.parse(stored) : null
   })
   const [activeTab, setActiveTab] = useState('Dashboard')
+  const [groups, setGroups] = useState([])
+  const [groupsLoading, setGroupsLoading] = useState(false)
+  const [groupsError, setGroupsError] = useState('')
 
   const isLoggedIn = Boolean(session?.token)
 
@@ -99,17 +102,49 @@ function App() {
     return `Welcome back, ${session.user.name}`
   }, [session])
 
+  useEffect(() => {
+    const fetchGroups = async () => {
+      if (!session?.token) return
+      setGroupsLoading(true)
+      setGroupsError('')
+      try {
+        const response = await fetch(`${API_BASE}/groups`, {
+          headers: { Authorization: `Bearer ${session.token}` },
+        })
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data?.message || 'Failed to load groups')
+        }
+        setGroups(data.groups || [])
+      } catch (error) {
+        setGroupsError(error.message)
+      } finally {
+        setGroupsLoading(false)
+      }
+    }
+
+    fetchGroups()
+  }, [session])
+
   if (isLoggedIn) {
     const renderActiveTab = () => {
       switch (activeTab) {
         case 'Friends':
-          return <FriendsPage />
+          return <FriendsPage groups={groups} loading={groupsLoading} error={groupsError} />
         case 'Groups':
-          return <GroupsPage />
+          return (
+            <GroupsPage
+              groups={groups}
+              setGroups={setGroups}
+              loading={groupsLoading}
+              error={groupsError}
+              token={session.token}
+            />
+          )
         case 'Profile':
           return <ProfilePage />
         case 'Ledger':
-          return <LedgerPage />
+          return <LedgerPage groups={groups} loading={groupsLoading} error={groupsError} />
         default:
           return <DashboardPage greeting={greeting} />
       }

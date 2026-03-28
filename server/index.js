@@ -4,6 +4,9 @@
   const cors = require("cors");
   const mongoose = require("mongoose");
   const authRoutes = require("./routes/auth");
+  const groupRoutes = require("./routes/groups");
+  const userRoutes = require("./routes/users");
+  const forexRoutes = require("./routes/forex");
 
   const app = express();
   const PORT = process.env.PORT || 5000;
@@ -13,6 +16,9 @@
   app.use(express.json());
 
   app.use("/api/auth", authRoutes);
+  app.use("/api/groups", groupRoutes);
+  app.use("/api/users", userRoutes);
+  app.use("/api/forex", forexRoutes);
 
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
