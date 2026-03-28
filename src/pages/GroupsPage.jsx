@@ -1,12 +1,44 @@
 import { useState } from 'react'
 import GroupFormModal from '../components/groups/GroupFormModal'
+import ExpenseFormModal from '../components/groups/ExpenseFormModal'
 
 function GroupsPage({ groups, setGroups, loading, error, token }) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [expenseModal, setExpenseModal] = useState(null)
+  const [expenseMap, setExpenseMap] = useState({})
+  const [expenseLoading, setExpenseLoading] = useState({})
+  const [expenseError, setExpenseError] = useState({})
 
   const handleCreated = (group) => {
     setGroups((prev) => [group, ...prev])
     setModalOpen(false)
+  }
+
+  const loadExpenses = async (groupId) => {
+    setExpenseLoading((prev) => ({ ...prev, [groupId]: true }))
+    setExpenseError((prev) => ({ ...prev, [groupId]: '' }))
+    try {
+      const response = await fetch(`http://localhost:5000/api/expenses/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data?.message || 'Failed to fetch expenses')
+      }
+      setExpenseMap((prev) => ({ ...prev, [groupId]: data.expenses || [] }))
+    } catch (err) {
+      setExpenseError((prev) => ({ ...prev, [groupId]: err.message }))
+    } finally {
+      setExpenseLoading((prev) => ({ ...prev, [groupId]: false }))
+    }
+  }
+
+  const handleExpenseCreated = (groupId, expense) => {
+    setExpenseMap((prev) => ({
+      ...prev,
+      [groupId]: [expense, ...(prev[groupId] || [])],
+    }))
+    setExpenseModal(null)
   }
 
   return (
@@ -35,7 +67,8 @@ function GroupsPage({ groups, setGroups, loading, error, token }) {
 
         <div className="grid gap-4 md:grid-cols-2">
           {groups.map((group) => (
-            <div key={group._id} className="rounded-3xl border border-slate-800 bg-slate-950 p-5">
+            <div key={group._id} className="group relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950 p-5">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/60 to-transparent opacity-0 transition group-hover:opacity-100" />
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-lg font-semibold text-white">{group.name}</p>
@@ -53,13 +86,46 @@ function GroupsPage({ groups, setGroups, loading, error, token }) {
                 ))}
               </div>
               <div className="mt-5 flex flex-wrap gap-3 text-xs">
-                <button className="rounded-full border border-slate-700 px-4 py-2 text-slate-100 transition hover:border-slate-400">
-                  View expenses
+                <button
+                  type="button"
+                  onClick={() => loadExpenses(group._id)}
+                  className="rounded-full border border-slate-700 px-4 py-2 text-slate-100 transition hover:border-slate-400"
+                >
+                  {expenseLoading[group._id] ? 'Loading…' : 'View expenses'}
                 </button>
-                <button className="rounded-full border border-emerald-500/60 px-4 py-2 text-emerald-200 transition hover:border-emerald-400">
+                <button
+                  type="button"
+                  onClick={() => setExpenseModal(group)}
+                  className="rounded-full border border-emerald-500/60 px-4 py-2 text-emerald-200 transition hover:border-emerald-400"
+                >
                   Add expense
                 </button>
               </div>
+
+              {expenseError[group._id] ? (
+                <p className="mt-3 text-xs text-rose-400">{expenseError[group._id]}</p>
+              ) : null}
+
+              {(expenseMap[group._id] || []).length ? (
+                <div className="mt-4 space-y-3">
+                  {(expenseMap[group._id] || []).map((expense) => (
+                    <div
+                      key={expense._id}
+                      className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-white">{expense.title}</p>
+                        <p className="text-xs text-slate-500">
+                          Paid by {expense.paidBy?.name} · {expense.splitType} split
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-emerald-300">
+                        {expense.currency} {expense.totalAmount}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -73,6 +139,15 @@ function GroupsPage({ groups, setGroups, loading, error, token }) {
 
       {modalOpen ? (
         <GroupFormModal token={token} onClose={() => setModalOpen(false)} onCreated={handleCreated} />
+      ) : null}
+
+      {expenseModal ? (
+        <ExpenseFormModal
+          token={token}
+          group={expenseModal}
+          onClose={() => setExpenseModal(null)}
+          onCreated={(expense) => handleExpenseCreated(expenseModal._id, expense)}
+        />
       ) : null}
     </main>
   )

@@ -110,8 +110,9 @@ function GroupFormModal({ token, onClose, onCreated }) {
           <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
         </div>
 
-        <form onSubmit={submitGroup} className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="space-y-4">
+        <form onSubmit={submitGroup} className="mt-6 grid gap-6">
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="space-y-4">
             <div>
               <label className="text-xs text-slate-400">Group name</label>
               <input
@@ -183,63 +184,64 @@ function GroupFormModal({ token, onClose, onCreated }) {
                 )}
               </div>
             </div>
+            </div>
+
+            <div className="space-y-4 rounded-3xl border border-slate-800 bg-slate-950/50 p-4">
+              <h3 className="text-sm font-semibold text-white">Forex preview</h3>
+              <p className="text-xs text-slate-400">Use ExchangeRate-API to lock currency rates when logging expenses.</p>
+              <div className="grid gap-2">
+                <label className="text-xs text-slate-400">Base currency</label>
+                <input
+                  value={forexBase}
+                  onChange={(event) => setForexBase(event.target.value.toUpperCase())}
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+                  placeholder="USD"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-xs text-slate-400">Target currency</label>
+                <input
+                  value={forexTarget}
+                  onChange={(event) => setForexTarget(event.target.value.toUpperCase())}
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+                  placeholder="INR"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={fetchForexRate}
+                className="w-full rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 transition hover:border-slate-400"
+              >
+                {forexLoading ? 'Fetching rate…' : 'Get rate'}
+              </button>
+              {forexRate ? (
+                <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-200">
+                  1 {forexBase.toUpperCase()} = {forexRate} {forexTarget.toUpperCase()}
+                </div>
+              ) : null}
+              {forexError ? <p className="text-xs text-rose-400">{forexError}</p> : null}
+            </div>
           </div>
 
-          <div className="space-y-4 rounded-3xl border border-slate-800 bg-slate-950/50 p-4">
-            <h3 className="text-sm font-semibold text-white">Forex preview</h3>
-            <p className="text-xs text-slate-400">Use ExchangeRate-API to lock currency rates when logging expenses.</p>
-            <div className="grid gap-2">
-              <label className="text-xs text-slate-400">Base currency</label>
-              <input
-                value={forexBase}
-                onChange={(event) => setForexBase(event.target.value.toUpperCase())}
-                className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
-                placeholder="USD"
-              />
-            </div>
-            <div className="grid gap-2">
-              <label className="text-xs text-slate-400">Target currency</label>
-              <input
-                value={forexTarget}
-                onChange={(event) => setForexTarget(event.target.value.toUpperCase())}
-                className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
-                placeholder="INR"
-              />
-            </div>
+          {submitError ? <p className="text-sm text-rose-400">{submitError}</p> : null}
+
+          <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={fetchForexRate}
-              className="w-full rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 transition hover:border-slate-400"
+              onClick={onClose}
+              className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 transition hover:border-slate-400"
             >
-              {forexLoading ? 'Fetching rate…' : 'Get rate'}
+              Cancel
             </button>
-            {forexRate ? (
-              <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-200">
-                1 {forexBase.toUpperCase()} = {forexRate} {forexTarget.toUpperCase()}
-              </div>
-            ) : null}
-            {forexError ? <p className="text-xs text-rose-400">{forexError}</p> : null}
+            <button
+              type="submit"
+              disabled={submitLoading}
+              className="rounded-full bg-emerald-500 px-5 py-2 text-xs font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitLoading ? 'Creating…' : 'Create group'}
+            </button>
           </div>
         </form>
-
-        {submitError ? <p className="mt-3 text-sm text-rose-400">{submitError}</p> : null}
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-100 transition hover:border-slate-400"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={submitLoading}
-            className="rounded-full bg-emerald-500 px-5 py-2 text-xs font-semibold text-slate-900 transition hover:-translate-y-0.5 hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitLoading ? 'Creating…' : 'Create group'}
-          </button>
-        </div>
       </div>
     </div>
   )
