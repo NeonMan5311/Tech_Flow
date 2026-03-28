@@ -83,14 +83,7 @@ function MarketingLanding() {
         </div>
       </section>
 
-      <section id="judge" className="mt-10 rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-7">
-        <h2 className="text-2xl font-semibold text-white">Why this is hackathon-viable</h2>
-        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-slate-200">
-          <li>Covers all required PS 3.3 features with clear UX surfaces.</li>
-          <li>Explains fairness decisions with auditable, neutral records.</li>
-          <li>Ready for live demo: create group → add expense → show optimized settlement instantly.</li>
-        </ul>
-      </section>
+      
     </main>
   )
 }

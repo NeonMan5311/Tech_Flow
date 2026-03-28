@@ -8,7 +8,6 @@ function MarketingHeader({ onOpenModal }) {
         <nav className="hidden items-center gap-6 text-sm text-slate-400 md:flex">
           <a className="hover:text-cyan-300" href="#features">Features</a>
           <a className="hover:text-cyan-300" href="#workflow">Workflow</a>
-          <a className="hover:text-cyan-300" href="#judge">Why judges like this</a>
         </nav>
         <div className="flex items-center gap-3">
           <button
