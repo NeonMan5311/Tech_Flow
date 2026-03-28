@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 const API_BASE = 'http://localhost:5000/api'
+const money = (n) => `₹${Number(n || 0).toFixed(2)}`
 
 function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey }) {
   const members = groups.flatMap((group) => group.members || [])
@@ -12,23 +13,51 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
   const [openLedger, setOpenLedger] = useState([])
 
   const currentUserId = session?.user?._id
+  const groupLookup = useMemo(() => Object.fromEntries(groups.map((g) => [g._id, g])), [groups])
+  const memberLookup = useMemo(
+    () =>
+      Object.fromEntries(
+        groups
+          .flatMap((group) => group.members || [])
+          .map((member) => [member._id, member])
+      ),
+    [groups]
+  )
 
   useEffect(() => {
-    const fetchExpenses = async () => {
-      if (!token || !groups.length) return
-      setExpenseLoading(true)
-      setExpenseError('')
+    const loadFriendsData = async () => {
+      if (!token || !currentUserId) return
+      setPageLoading(true)
+      setPageError('')
+
       try {
-        const responses = await Promise.all(
-          groups.map((group) =>
+        const [summaryRes, groupsRes] = await Promise.all([
+          fetch(`${API_BASE}/expenses/summary/user`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_BASE}/groups`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ])
+
+        const summaryData = await summaryRes.json()
+        const groupsData = await groupsRes.json()
+
+        if (!summaryRes.ok) throw new Error(summaryData?.message || 'Failed to load balances')
+        if (!groupsRes.ok) throw new Error(groupsData?.message || 'Failed to load groups')
+
+        setSummary(summaryData.summary || { owe: 0, owed: 0, net: 0 })
+        setPeople(summaryData.people || [])
+
+        const ownedGroups = groupsData.groups || []
+        const expenseResponses = await Promise.all(
+          ownedGroups.map((group) =>
             fetch(`${API_BASE}/expenses/${group._id}`, {
               headers: { Authorization: `Bearer ${token}` },
             }).then(async (response) => {
               const data = await response.json()
-              if (!response.ok) {
-                throw new Error(data?.message || 'Failed to fetch expenses')
-              }
-              return [group._id, data.expenses || []]
+              if (!response.ok) throw new Error(data?.message || 'Failed to load expenses')
+              return { group, expenses: data.expenses || [] }
             })
           )
         )
@@ -141,55 +170,24 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
       }
     })
 
-    settlements.forEach((settlement) => {
-      const fromUser = settlement.fromUser?._id || settlement.fromUser
-      const toUser = settlement.toUser?._id || settlement.toUser
-      const amount = Number(settlement.amount || 0)
-      if (!amount) return
-      if (!groupBalances.has(settlement.group?._id || settlement.group)) {
-        groupBalances.set(settlement.group?._id || settlement.group, {
-          owe: 0,
-          owed: 0,
-          currency: settlement.currency,
-        })
-      }
+        txns.sort((a, b) => new Date(b.date) - new Date(a.date))
+        setTransactions(txns.slice(0, 12))
 
-      if (fromUser === currentUserId) {
-        balances.set(toUser, (balances.get(toUser) || 0) + amount)
-        groupBalances.set(settlement.group?._id || settlement.group, {
-          ...groupBalances.get(settlement.group?._id || settlement.group),
-          owe: Math.max(groupBalances.get(settlement.group?._id || settlement.group).owe - amount, 0),
-          currency: settlement.currency,
-        })
-      } else if (toUser === currentUserId) {
-        balances.set(fromUser, (balances.get(fromUser) || 0) - amount)
-        groupBalances.set(settlement.group?._id || settlement.group, {
-          ...groupBalances.get(settlement.group?._id || settlement.group),
-          owed: Math.max(groupBalances.get(settlement.group?._id || settlement.group).owed - amount, 0),
-          currency: settlement.currency,
-        })
+        const groupRows = Array.from(groupNetMap.entries()).map(([groupId, net]) => ({
+          groupId,
+          groupName: groupLookup[groupId]?.name || 'Group',
+          net,
+        }))
+        setGroupTotals(groupRows)
+      } catch (err) {
+        setPageError(err.message)
+      } finally {
+        setPageLoading(false)
       }
-    })
-
-    const owedByYou = []
-    const owedToYou = []
-    balances.forEach((value, friendId) => {
-      if (value < 0) {
-        owedByYou.push({ friendId, amount: Math.abs(value) })
-      } else if (value > 0) {
-        owedToYou.push({ friendId, amount: value })
-      }
-    })
-
-    const totals = {
-      owe: owedByYou.reduce((sum, item) => sum + item.amount, 0),
-      owed: owedToYou.reduce((sum, item) => sum + item.amount, 0),
     }
 
-    const groupTotals = Array.from(groupBalances.entries()).map(([groupId, data]) => ({
-      groupId,
-      ...data,
-    }))
+    loadFriendsData()
+  }, [token, currentUserId, groupLookup])
 
     return { owedByYou, owedToYou, transactions, totals, groupTotals }
   }, [openLedger, currentUserId, settlements])
@@ -216,125 +214,99 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
   }, [balanceData.owedByYou, balanceData.owedToYou])
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 pb-20">
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-600">Friends</p>
-        <h1 className="mt-2 text-3xl font-semibold text-slate-900">People you split with</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Members added to your groups appear here for quick access and reminders.
-        </p>
+    <main className="mx-auto w-full max-w-7xl px-6 pb-20 pt-8">
+      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-7">
+        <p className="text-xs uppercase tracking-[0.35em] text-cyan-300">Friends</p>
+        <h1 className="mt-2 text-4xl font-semibold text-white">People you split with</h1>
+        <p className="mt-2 text-sm text-slate-300">Live balances pulled from your actual expense history.</p>
       </section>
 
-      <section className="mt-6 grid gap-4">
-        {loading ? <p className="text-sm text-slate-500">Loading members…</p> : null}
-        {error ? <p className="text-sm text-rose-400">{error}</p> : null}
-        {expenseLoading ? <p className="text-sm text-slate-500">Loading expenses…</p> : null}
-        {expenseError ? <p className="text-sm text-rose-400">{expenseError}</p> : null}
+      <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <article className="rounded-3xl border border-rose-300/20 bg-rose-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-rose-200">You owe</p>
+          <p className="mt-2 text-3xl font-bold text-rose-100">{money(summary.owe)}</p>
+          <p className="mt-2 text-xs text-rose-200/80">{youOwe.length} people</p>
+        </article>
+        <article className="rounded-3xl border border-cyan-300/20 bg-cyan-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-cyan-200">Owed to you</p>
+          <p className="mt-2 text-3xl font-bold text-cyan-100">{money(summary.owed)}</p>
+          <p className="mt-2 text-xs text-cyan-200/80">{owesYou.length} people</p>
+        </article>
+        <article className="rounded-3xl border border-emerald-300/20 bg-emerald-500/10 p-5">
+          <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Net</p>
+          <p className="mt-2 text-3xl font-bold text-emerald-100">{money(summary.net)}</p>
+          <p className="mt-2 text-xs text-emerald-200/80">{summary.net >= 0 ? 'You are net positive' : 'You are net payable'}</p>
+        </article>
+      </section>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">You owe</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">₹{balanceData.totals.owe.toFixed(2)}</p>
-            <div className="mt-4 space-y-3">
-              {balanceData.owedByYou.map((item) => {
-                const friend = friendLookup[item.friendId]
-                return (
-                  <div key={item.friendId} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <span className="text-sm text-slate-700">{friend?.name || 'Friend'}</span>
-                    <span className="text-sm font-semibold text-rose-500">₹{item.amount.toFixed(2)}</span>
-                  </div>
-                )
-              })}
-              {!balanceData.owedByYou.length ? (
-                <p className="text-xs text-slate-500">No dues right now.</p>
-              ) : null}
-            </div>
-          </div>
+      {loading ? <p className="mt-4 text-sm text-slate-300">Loading members…</p> : null}
+      {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
+      {pageLoading ? <p className="mt-4 text-sm text-slate-300">Refreshing balances…</p> : null}
+      {pageError ? <p className="mt-4 text-sm text-rose-300">{pageError}</p> : null}
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Owed to you</p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">₹{balanceData.totals.owed.toFixed(2)}</p>
-            <div className="mt-4 space-y-3">
-              {balanceData.owedToYou.map((item) => {
-                const friend = friendLookup[item.friendId]
-                return (
-                  <div key={item.friendId} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <span className="text-sm text-slate-700">{friend?.name || 'Friend'}</span>
-                    <span className="text-sm font-semibold text-blue-600">₹{item.amount.toFixed(2)}</span>
-                  </div>
-                )
-              })}
-              {!balanceData.owedToYou.length ? (
-                <p className="text-xs text-slate-500">No one owes you right now.</p>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-lg font-semibold text-slate-900">Transactions</p>
-            <p className="text-xs text-slate-500">{balanceData.transactions.length} total</p>
-          </div>
+      <section className="mt-6 grid gap-6 lg:grid-cols-2">
+        <article className="rounded-3xl border border-white/10 bg-white/5 p-5">
+          <h2 className="text-xl font-semibold text-white">Top people you owe</h2>
           <div className="mt-4 space-y-3">
-            {balanceData.transactions.map((transaction, index) => {
-              const friend = friendLookup[transaction.friendId]
-              return (
-                <div key={`${transaction.title}-${index}`} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{transaction.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {transaction.type === 'owe' ? 'You owe' : 'You get'} {friend?.name || 'Friend'}
-                    </p>
+            {youOwe
+              .sort((a, b) => b.amount - a.amount)
+              .slice(0, 5)
+              .map((item) => (
+                <div key={item.userId} className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-white">{item.userName}</p>
+                    <p className="text-sm font-semibold text-rose-200">{money(item.amount)}</p>
                   </div>
-                  <p className={`text-sm font-semibold ${transaction.type === 'owe' ? 'text-rose-500' : 'text-blue-600'}`}>
-                    {transaction.currency} {transaction.amount.toFixed(2)}
-                  </p>
+                  <p className="text-xs text-slate-400">You owe this person</p>
                 </div>
-              )
-            })}
-            {!balanceData.transactions.length ? (
-              <p className="text-xs text-slate-500">No transactions yet.</p>
-            ) : null}
+              ))}
+            {!youOwe.length ? <p className="text-sm text-slate-400">No pending dues.</p> : null}
           </div>
-        </div>
+        </article>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-lg font-semibold text-slate-900">Group totals</p>
-            <p className="text-xs text-slate-500">Outstanding per group</p>
-          </div>
+        <article className="rounded-3xl border border-white/10 bg-white/5 p-5">
+          <h2 className="text-xl font-semibold text-white">Top people who owe you</h2>
           <div className="mt-4 space-y-3">
-            {balanceData.groupTotals.map((groupTotal) => (
-              <div
-                key={groupTotal.groupId}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-              >
+            {owesYou
+              .sort((a, b) => b.amount - a.amount)
+              .slice(0, 5)
+              .map((item) => (
+                <div key={item.userId} className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-white">{item.userName}</p>
+                    <p className="text-sm font-semibold text-emerald-200">{money(item.amount)}</p>
+                  </div>
+                  <p className="text-xs text-slate-400">This person owes you</p>
+                </div>
+              ))}
+            {!owesYou.length ? <p className="text-sm text-slate-400">No receivables pending.</p> : null}
+          </div>
+        </article>
+      </section>
+
+      <section className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Recent friend transactions</h2>
+          <p className="text-xs text-slate-400">{transactions.length} shown</p>
+        </div>
+        <div className="mt-4 space-y-3">
+          {transactions.map((txn) => {
+            const friend = memberLookup[txn.friendId]
+            return (
+              <div key={txn.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {groupLookup[groupTotal.groupId]?.name || 'Group'}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    You owe {groupTotal.currency} {groupTotal.owe.toFixed(2)} · Owed to you{' '}
-                    {groupTotal.currency} {groupTotal.owed.toFixed(2)}
+                  <p className="text-sm font-semibold text-white">{txn.title}</p>
+                  <p className="text-xs text-slate-400">
+                    {txn.groupName} · {txn.direction === 'you_owe' ? 'You owe' : 'You get'} {friend?.name || 'Member'}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-slate-500">Net</p>
-                  <p
-                    className={`text-sm font-semibold ${
-                      groupTotal.owed - groupTotal.owe >= 0 ? 'text-blue-600' : 'text-rose-500'
-                    }`}
-                  >
-                    {groupTotal.currency} {(groupTotal.owed - groupTotal.owe).toFixed(2)}
-                  </p>
-                </div>
+                <p className={`text-sm font-semibold ${txn.direction === 'you_owe' ? 'text-rose-200' : 'text-cyan-200'}`}>
+                  {txn.currency} {txn.amount.toFixed(2)}
+                </p>
               </div>
-            ))}
-            {!balanceData.groupTotals.length ? (
-              <p className="text-xs text-slate-500">No group totals yet.</p>
-            ) : null}
-          </div>
+            )
+          })}
+          {!transactions.length ? <p className="text-sm text-slate-400">No transactions yet.</p> : null}
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           {unique.map((member) => {
@@ -361,10 +333,6 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
             )
           })}
         </div>
-
-        {!unique.length && !loading ? (
-          <p className="text-sm text-slate-600">No group members yet. Create a group to see them here.</p>
-        ) : null}
       </section>
     </main>
   )

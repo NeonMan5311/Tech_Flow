@@ -157,6 +157,8 @@ function GroupsPage({ groups, setGroups, loading, error, token, onLedgerRefresh 
                   {expense.paidBy?.name} · {expense.splitType}
                 </p>
               </div>
+              <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[10px] uppercase tracking-wide text-cyan-200">Live</span>
+            </div>
 
               <p className="text-sm text-black font-semibold">
                 {expense.currency} {expense.totalAmount}
