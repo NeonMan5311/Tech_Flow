@@ -6,9 +6,10 @@ const money = (n) => `₹${Number(n || 0).toFixed(2)}`
 function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey }) {
   const members = groups.flatMap((group) => group.members || [])
   const unique = Array.from(new Map(members.map((m) => [m._id, m])).values())
-  const [expenseMap, setExpenseMap] = useState({})
-  const [expenseLoading, setExpenseLoading] = useState(false)
-  const [expenseError, setExpenseError] = useState('')
+  const [summary, setSummary] = useState({ owe: 0, owed: 0, net: 0 })
+  const [people, setPeople] = useState([])
+  const [pageLoading, setPageLoading] = useState(false)
+  const [pageError, setPageError] = useState('')
   const [settlements, setSettlements] = useState([])
   const [openLedger, setOpenLedger] = useState([])
 
@@ -25,52 +26,29 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
   )
 
   useEffect(() => {
-    const loadFriendsData = async () => {
+    const fetchSummary = async () => {
       if (!token || !currentUserId) return
       setPageLoading(true)
       setPageError('')
 
       try {
-        const [summaryRes, groupsRes] = await Promise.all([
-          fetch(`${API_BASE}/expenses/summary/user`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${API_BASE}/groups`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ])
+        const response = await fetch(`${API_BASE}/expenses/summary/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data?.message || 'Failed to load balances')
 
-        const summaryData = await summaryRes.json()
-        const groupsData = await groupsRes.json()
-
-        if (!summaryRes.ok) throw new Error(summaryData?.message || 'Failed to load balances')
-        if (!groupsRes.ok) throw new Error(groupsData?.message || 'Failed to load groups')
-
-        setSummary(summaryData.summary || { owe: 0, owed: 0, net: 0 })
-        setPeople(summaryData.people || [])
-
-        const ownedGroups = groupsData.groups || []
-        const expenseResponses = await Promise.all(
-          ownedGroups.map((group) =>
-            fetch(`${API_BASE}/expenses/${group._id}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }).then(async (response) => {
-              const data = await response.json()
-              if (!response.ok) throw new Error(data?.message || 'Failed to load expenses')
-              return { group, expenses: data.expenses || [] }
-            })
-          )
-        )
-        setExpenseMap(Object.fromEntries(responses))
+        setSummary(data.summary || { owe: 0, owed: 0, net: 0 })
+        setPeople(data.people || [])
       } catch (err) {
-        setExpenseError(err.message)
+        setPageError(err.message)
       } finally {
-        setExpenseLoading(false)
+        setPageLoading(false)
       }
     }
 
-    fetchExpenses()
-  }, [groups, token])
+    fetchSummary()
+  }, [token, currentUserId, ledgerRefreshKey])
 
   useEffect(() => {
     const fetchOpenLedger = async () => {
@@ -85,7 +63,7 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
         }
         setOpenLedger(data.entries || [])
       } catch (err) {
-        setExpenseError(err.message)
+        setPageError(err.message)
       }
     }
 
@@ -105,7 +83,7 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
         }
         setSettlements(data.settlements || [])
       } catch (err) {
-        setExpenseError(err.message)
+        setPageError(err.message)
       }
     }
 
@@ -145,12 +123,15 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
           currency: entry.currency,
         })
         transactions.push({
-          type: 'owe',
+          id: entry._id || `${groupId}-${fromUser}-${toUser}-${amount}`,
+          direction: 'you_owe',
           friendId: toUser,
           title: entry.expense?.title || entry.group?.name || 'Expense',
           amount,
-          currency: entry.currency,
+          currency: entry.currency || 'INR',
           groupId,
+          groupName: groupLookup[groupId]?.name || 'Group',
+          date: entry.date || entry.createdAt || entry.updatedAt,
         })
       } else if (toUser === currentUserId) {
         balances.set(fromUser, (balances.get(fromUser) || 0) + amount)
@@ -160,46 +141,54 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
           currency: entry.currency,
         })
         transactions.push({
-          type: 'owed',
+          id: entry._id || `${groupId}-${fromUser}-${toUser}-${amount}`,
+          direction: 'owes_you',
           friendId: fromUser,
           title: entry.expense?.title || entry.group?.name || 'Expense',
           amount,
-          currency: entry.currency,
+          currency: entry.currency || 'INR',
           groupId,
+          groupName: groupLookup[groupId]?.name || 'Group',
+          date: entry.date || entry.createdAt || entry.updatedAt,
         })
       }
     })
 
-        txns.sort((a, b) => new Date(b.date) - new Date(a.date))
-        setTransactions(txns.slice(0, 12))
+    const owedByYou = []
+    const owedToYou = []
 
-        const groupRows = Array.from(groupNetMap.entries()).map(([groupId, net]) => ({
-          groupId,
-          groupName: groupLookup[groupId]?.name || 'Group',
-          net,
-        }))
-        setGroupTotals(groupRows)
-      } catch (err) {
-        setPageError(err.message)
-      } finally {
-        setPageLoading(false)
+    balances.forEach((amount, friendId) => {
+      if (amount < 0) {
+        owedByYou.push({ friendId, amount: Math.abs(amount) })
+      } else if (amount > 0) {
+        owedToYou.push({ friendId, amount })
       }
+    })
+
+    const totals = {
+      owe: owedByYou.reduce((sum, item) => sum + item.amount, 0),
+      owed: owedToYou.reduce((sum, item) => sum + item.amount, 0),
     }
 
-    loadFriendsData()
-  }, [token, currentUserId, groupLookup])
+    const groupTotals = Array.from(groupBalances.entries()).map(([groupId, data]) => ({
+      groupId,
+      groupName: groupLookup[groupId]?.name || 'Group',
+      ...data,
+    }))
+
+    transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
 
     return { owedByYou, owedToYou, transactions, totals, groupTotals }
   }, [openLedger, currentUserId, settlements])
 
-  const friendLookup = useMemo(
-    () => Object.fromEntries(unique.map((member) => [member._id, member])),
-    [unique]
+  const youOwe = useMemo(
+    () => people.filter((item) => item.direction === 'you_owe'),
+    [people]
   )
 
-  const groupLookup = useMemo(
-    () => Object.fromEntries(groups.map((group) => [group._id, group])),
-    [groups]
+  const owesYou = useMemo(
+    () => people.filter((item) => item.direction === 'owes_you'),
+    [people]
   )
 
   const friendBalances = useMemo(() => {
@@ -212,6 +201,8 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
     })
     return balanceMap
   }, [balanceData.owedByYou, balanceData.owedToYou])
+
+  const transactions = balanceData.transactions
 
   return (
     <main className="mx-auto w-full max-w-7xl px-6 pb-20 pt-8">
