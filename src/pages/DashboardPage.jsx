@@ -18,9 +18,7 @@ function DashboardPage({ greeting, token }) {
           headers: { Authorization: `Bearer ${token}` },
         })
         const data = await response.json()
-        if (!response.ok) {
-          throw new Error(data?.message || 'Failed to load dashboard summary')
-        }
+        if (!response.ok) throw new Error(data?.message || 'Failed to load dashboard summary')
         setSummary(data.summary || { owe: 0, owed: 0, net: 0 })
         setPeople(data.people || [])
       } catch (err) {

@@ -1,137 +1,95 @@
+const pillars = [
+  {
+    title: 'Flexible split engine',
+    text: 'Equal, percentage, weighted shares, and item-level splits with built-in validation.',
+  },
+  {
+    title: 'Multi-currency transparency',
+    text: 'Every expense stores the forex rate used at the exact moment it was logged.',
+  },
+  {
+    title: 'Optimized settlements',
+    text: 'Debt graph simplification reduces payment hops and social friction.',
+  },
+]
+
 function MarketingLanding() {
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 pb-20">
-      <section className="grid gap-12 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-8">
-          <span className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600">
-            Smart debt simplification
-          </span>
-          <h1 className="text-4xl font-semibold leading-tight text-slate-900 md:text-5xl">
-            Split expenses without the awkward follow-ups.
-          </h1>
-          <p className="text-lg text-slate-600">
-            Track group spending, handle multi-currency trips, and reduce everyone’s dues into the smallest number of payments.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <button className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-500">
-              Create a group
-            </button>
-            <button className="rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-slate-300">
-              See how it works
-            </button>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              { label: 'Groups managed', value: '1,250+' },
-              { label: 'Avg. payments saved', value: '38%' },
-              { label: 'Supported currencies', value: '40+' },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p className="text-2xl font-semibold text-slate-900">{stat.value}</p>
-                <p className="text-xs uppercase tracking-wide text-slate-500">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+    <main className="mx-auto w-full max-w-7xl px-6 pb-20 pt-10 text-slate-100">
+      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 p-8 shadow-2xl shadow-cyan-900/20 lg:p-12">
+        <div className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -right-10 h-64 w-64 rounded-full bg-fuchsia-500/20 blur-3xl" />
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
-          <div className="rounded-2xl bg-slate-50 p-6">
-            <p className="text-sm font-semibold text-blue-600">Today · Goa Trip</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-900">You get ₹2,350</h2>
-            <p className="mt-1 text-sm text-slate-500">Balances simplified into just 2 payments.</p>
-            <div className="mt-6 space-y-4">
+        <div className="relative grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="space-y-6">
+            <span className="inline-flex items-center rounded-full border border-cyan-300/30 bg-cyan-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-200">
+              PS 3.3 Hackathon Ready
+            </span>
+            <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
+              Split group expenses <span className="text-cyan-300">fairly</span>, not just equally.
+            </h1>
+            <p className="max-w-2xl text-base text-slate-300 md:text-lg">
+              Built for trips, flats, and teams: recurring bills, room-size weighting, diet-aware item splits, and clear member dashboards.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button className="rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-500 px-6 py-3 text-sm font-bold text-slate-950">Launch App</button>
+              <button className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white">Watch 60s Demo Flow</button>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-black/30 p-5 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Live snapshot · Goa Trip</p>
+            <h2 className="mt-3 text-3xl font-semibold text-cyan-300">2 transactions instead of 6</h2>
+            <p className="mt-2 text-sm text-slate-300">Debt simplification computed from all logged expenses in base currency (INR).</p>
+            <div className="mt-5 space-y-3">
               {[
-                { name: 'Rahul → You', amount: '₹1,150' },
-                { name: 'Priya → You', amount: '₹1,200' },
+                { route: 'Aman → Nitya', amount: '₹2,450' },
+                { route: 'Riya → Nitya', amount: '₹1,160' },
               ].map((row) => (
-                <div key={row.name} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
-                  <span className="text-sm text-slate-600">{row.name}</span>
-                  <span className="text-sm font-semibold text-blue-600">{row.amount}</span>
+                <div key={row.route} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                  <span className="text-sm text-slate-200">{row.route}</span>
+                  <span className="text-sm font-semibold text-fuchsia-200">{row.amount}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {[
-              { title: 'Settle up', text: 'Instantly send a reminder with a single tap.' },
-              { title: 'Recurrence', text: 'Automate rent, utilities, and subscriptions.' },
-            ].map((card) => (
-              <div key={card.title} className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-900">{card.title}</p>
-                <p className="mt-2 text-xs text-slate-500">{card.text}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
-      <section id="features" className="space-y-8 py-12">
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">Features</p>
-          <h2 className="text-3xl font-semibold text-slate-900">Everything you need to split fairly.</h2>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
+      <section id="features" className="mt-10 grid gap-5 md:grid-cols-3">
+        {pillars.map((feature) => (
+          <article key={feature.title} className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+            <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
+            <p className="mt-3 text-sm text-slate-300">{feature.text}</p>
+          </article>
+        ))}
+      </section>
+
+      <section id="workflow" className="mt-10 rounded-3xl border border-white/10 bg-slate-900/70 p-6 lg:p-8">
+        <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Workflow</p>
+        <h2 className="mt-3 text-3xl font-semibold text-white">From add expense to settle-up in under a minute.</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
           {[
-            {
-              title: 'Smart split engine',
-              text: 'Equal, percentage, share, or item-level splits with automatic fairness checks.',
-            },
-            {
-              title: 'Multi-currency ready',
-              text: 'Lock exchange rates at the moment of payment and store the history for transparency.',
-            },
-            {
-              title: 'Debt simplification',
-              text: 'Convert complex balances into the smallest set of payments with one click.',
-            },
-          ].map((feature) => (
-            <div key={feature.title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <p className="text-lg font-semibold text-slate-900">{feature.title}</p>
-              <p className="mt-3 text-sm text-slate-600">{feature.text}</p>
+            'Create group + add members',
+            'Log flexible expense split',
+            'Auto convert and save forex rate',
+            'Get minimized settle-up graph',
+          ].map((step, idx) => (
+            <div key={step} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-xs font-semibold text-cyan-300">Step {String(idx + 1).padStart(2, '0')}</p>
+              <p className="mt-2 text-sm text-slate-200">{step}</p>
             </div>
           ))}
         </div>
       </section>
 
-      <section id="workflow" className="grid gap-10 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div className="space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-600">Workflow</p>
-          <h2 className="text-3xl font-semibold text-slate-900">From expense to settle-up in minutes.</h2>
-          <p className="text-sm text-slate-600">
-            Add an expense, select the split style, and let Split It Fair compute balances instantly. Everyone sees what they owe.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[
-            { step: '01', title: 'Create your group', text: 'Invite friends, roommates, or teammates.' },
-            { step: '02', title: 'Log expenses', text: 'Capture receipts or enter totals manually.' },
-            { step: '03', title: 'Choose split rules', text: 'Equal, shares, items, or custom percentages.' },
-            { step: '04', title: 'Simplify payments', text: 'We reduce everything to the fewest transfers.' },
-          ].map((step) => (
-            <div key={step.step} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <p className="text-xs font-semibold text-blue-600">Step {step.step}</p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">{step.title}</p>
-              <p className="mt-2 text-xs text-slate-500">{step.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="pricing" className="grid gap-8 py-12">
-        <div className="rounded-3xl border border-blue-100 bg-blue-50 p-8">
-          <h2 className="text-3xl font-semibold text-slate-900">Free for trips. Powerful for teams.</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Start for free, upgrade when you need recurring automation, pro insights, and API access.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-4">
-            <button className="rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white">
-              Try Split It Fair
-            </button>
-            <button className="rounded-full border border-blue-200 px-6 py-3 text-sm font-semibold text-blue-700">
-              View pricing
-            </button>
-          </div>
-        </div>
+      <section id="judge" className="mt-10 rounded-3xl border border-fuchsia-300/30 bg-fuchsia-500/10 p-7">
+        <h2 className="text-2xl font-semibold text-white">Why this is hackathon-viable</h2>
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-slate-200">
+          <li>Covers all required PS 3.3 features with clear UX surfaces.</li>
+          <li>Explains fairness decisions with auditable, neutral records.</li>
+          <li>Ready for live demo: create group → add expense → show optimized settlement instantly.</li>
+        </ul>
       </section>
     </main>
   )

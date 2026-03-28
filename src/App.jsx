@@ -174,7 +174,7 @@ function App() {
     }
 
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_55%)] text-slate-100">
         <DashboardHeader onLogout={logout} onSelect={setActiveTab} activeTab={activeTab} />
         {renderActiveTab()}
       </div>
@@ -182,10 +182,10 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#0f172a,_#020617_55%)] text-slate-100">
       <MarketingHeader onOpenModal={openModal} />
       <MarketingLanding />
-      <footer className="border-t border-slate-200 px-6 py-10 text-center text-xs text-slate-500">
+      <footer className="border-t border-white/10 px-6 py-10 text-center text-xs text-slate-400">
         Built for honest groups · © 2026 Split It Fair
       </footer>
 
