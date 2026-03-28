@@ -204,6 +204,17 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
     [groups]
   )
 
+  const friendBalances = useMemo(() => {
+    const balanceMap = new Map()
+    balanceData.owedByYou.forEach((item) => {
+      balanceMap.set(item.friendId, { direction: 'you_owe', amount: item.amount })
+    })
+    balanceData.owedToYou.forEach((item) => {
+      balanceMap.set(item.friendId, { direction: 'owes_you', amount: item.amount })
+    })
+    return balanceMap
+  }, [balanceData.owedByYou, balanceData.owedToYou])
+
   return (
     <main className="mx-auto w-full max-w-6xl px-6 pb-20">
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -326,13 +337,29 @@ function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey 
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          {unique.map((member) => (
-            <div key={member._id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-lg font-semibold text-slate-900">{member.name}</p>
-              <p className="text-xs text-slate-500">@{member.username}</p>
-              <p className="mt-3 text-xs text-slate-600">{member.email || 'No email on file'}</p>
-            </div>
-          ))}
+          {unique.map((member) => {
+            const balance = friendBalances.get(member._id)
+            const directionLabel = balance?.direction === 'you_owe' ? 'You owe' : balance?.direction === 'owes_you' ? 'Owes you' : 'Settled up'
+            const amountLabel = balance ? `₹${balance.amount.toFixed(2)}` : '₹0.00'
+            const amountClass = balance?.direction === 'you_owe' ? 'text-rose-500' : balance?.direction === 'owes_you' ? 'text-blue-600' : 'text-slate-500'
+
+            return (
+              <div key={member._id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-lg font-semibold text-slate-900">{member.name}</p>
+                    <p className="text-xs text-slate-500">@{member.username}</p>
+                    <p className="mt-3 text-xs text-slate-600">{member.email || 'No email on file'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Balance</p>
+                    <p className={`mt-2 text-lg font-semibold ${amountClass}`}>{amountLabel}</p>
+                    <p className="text-xs text-slate-500">{directionLabel}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
 
         {!unique.length && !loading ? (

@@ -66,153 +66,116 @@ function GroupsPage({ groups, setGroups, loading, error, token, onLedgerRefresh 
       </section>
 
       <section className="mt-8 grid gap-5 md:grid-cols-2">
-        {loading ? <p className="text-sm text-slate-300">Loading your groups…</p> : null}
-        {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+  {loading ? <p className="text-sm text-slate-300">Loading your groups…</p> : null}
+  {error ? <p className="text-sm text-rose-300">{error}</p> : null}
 
-        <div className="grid gap-6 md:grid-cols-2">
-          {groups.map((group) => (
-            <div key={group._id} className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-200 via-blue-500 to-indigo-500 opacity-80" />
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Group</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-900">{group.name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{group.members?.length || 0} members</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] uppercase text-blue-600">
-                    Active
-                  </span>
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] uppercase text-slate-500">
-                    Shared
-                  </span>
-                </div>
-              </div>
+  {groups.map((group) => (
+    <div
+      key={group._id}
+      className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+    >
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-200 via-blue-500 to-indigo-500 opacity-80" />
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Recent activity</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-900">
-                    {(expenseMap[group._id] || []).length ? (expenseMap[group._id] || [])[0]?.title : 'No expenses yet'}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {(expenseMap[group._id] || []).length
-                      ? `${(expenseMap[group._id] || [])[0]?.currency} ${(expenseMap[group._id] || [])[0]?.totalAmount}`
-                      : 'Add your first expense to get started.'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Members</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {group.members?.slice(0, 5).map((member) => (
-                      <span key={member._id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
-                        {member.name}
-                      </span>
-                    ))}
-                    {group.members?.length > 5 ? (
-                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500">
-                        +{group.members.length - 5} more
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
+      {/* HEADER */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Group</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">{group.name}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {group.members?.length || 0} members
+          </p>
+        </div>
+      </div>
 
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-3 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => loadExpenses(group._id)}
-                    className="rounded-full border border-slate-200 px-4 py-2 text-slate-600 transition hover:border-slate-300"
-                  >
-                    {expenseLoading[group._id] ? 'Loading…' : 'View expenses'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setExpenseModal(group)}
-                    className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-blue-700 transition hover:border-blue-300"
-                  >
-                    Add expense
-                  </button>
-                </div>
-                <div className="text-xs text-slate-400">
-                  Created • {group.members?.length || 0} people
-                </div>
-              </div>
-              <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-[10px] uppercase tracking-wide text-cyan-200">Live</span>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {group.members?.map((member) => (
-                <span key={member._id} className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-slate-200">
-                  {member.name}
-                </span>
-              ))}
-            </div>
-
-
-              {(simplifiedMap[group._id] || []).length ? (
-                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Optimized settlements</p>
-                  <div className="mt-2 space-y-1">
-                    {(simplifiedMap[group._id] || []).map((item, index) => {
-                      const fromName = group.members?.find((m) => m._id === item.from)?.name || 'Member'
-                      const toName = group.members?.find((m) => m._id === item.to)?.name || 'Member'
-                      return (
-                        <p key={`${item.from}-${item.to}-${index}`} className="text-xs text-emerald-800">
-                          {fromName} pays {toName}: {item.amount.toFixed(2)}
-                        </p>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : null}
-
-              {(expenseMap[group._id] || []).length ? (
-                <div className="mt-6 space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Latest expenses</p>
-                  {(expenseMap[group._id] || []).slice(0, 3).map((expense) => (
-                    <div
-                      key={expense._id}
-                      className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{expense.title}</p>
-                        <p className="text-xs text-slate-500">
-                          Paid by {expense.paidBy?.name} · {expense.splitType} split
-                        </p>
-                      </div>
-                      <p className="text-sm font-semibold text-blue-600">
-                        {expense.currency} {expense.totalAmount}
-                      </p>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
-
-            {(expenseMap[group._id] || []).length ? (
-              <div className="mt-4 space-y-3">
-                {(expenseMap[group._id] || []).slice(0, 3).map((expense) => (
-                  <div key={expense._id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{expense.title}</p>
-                      <p className="text-xs text-slate-400">Paid by {expense.paidBy?.name} · {expense.splitType}</p>
-                    </div>
-                    <p className="text-sm font-semibold text-cyan-200">{expense.currency} {expense.totalAmount}</p>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </article>
+      {/* MEMBERS */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        {group.members?.slice(0, 5).map((member) => (
+          <span
+            key={member._id}
+            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600"
+          >
+            {member.name}
+          </span>
         ))}
+      </div>
 
-        {!groups.length && !loading ? (
-          <div className="rounded-3xl border border-dashed border-white/25 bg-white/5 p-8 text-center">
-            <p className="text-sm text-slate-300">No groups yet. Start with one and demo your split engine.</p>
-          </div>
-        ) : null}
-      </section>
+      {/* ACTIONS */}
+      <div className="mt-6 flex gap-3 text-xs">
+        <button
+          onClick={() => loadExpenses(group._id)}
+          className="rounded-full border border-slate-200 px-4 py-2 text-slate-600"
+        >
+          {expenseLoading[group._id] ? "Loading…" : "View expenses"}
+        </button>
+
+        <button
+          onClick={() => setExpenseModal(group)}
+          className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-blue-700"
+        >
+          Add expense
+        </button>
+      </div>
+
+      {/* ERROR */}
+      {expenseError[group._id] && (
+        <p className="mt-3 text-xs text-red-500">{expenseError[group._id]}</p>
+      )}
+
+      {/* SIMPLIFIED SETTLEMENTS */}
+      {(simplifiedMap[group._id] || []).length > 0 && (
+        <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+          <p className="text-xs font-semibold text-emerald-700">
+            Optimized settlements
+          </p>
+
+          {(simplifiedMap[group._id] || []).map((item, index) => {
+            const fromName =
+              group.members?.find((m) => m._id === item.from)?.name || "Member";
+            const toName =
+              group.members?.find((m) => m._id === item.to)?.name || "Member";
+
+            return (
+              <p key={index} className="text-xs text-emerald-800">
+                {fromName} → {toName}: ₹{item.amount.toFixed(2)}
+              </p>
+            );
+          })}
+        </div>
+      )}
+
+      {/* EXPENSES */}
+      {(expenseMap[group._id] || []).length > 0 && (
+        <div className="mt-4 space-y-2">
+          {(expenseMap[group._id] || []).slice(0, 3).map((expense) => (
+            <div
+              key={expense._id}
+              className="flex justify-between rounded-xl border px-3 py-2"
+            >
+              <div>
+                <p className="text-sm text-black font-medium">{expense.title}</p>
+                <p className="text-xs text-slate-500">
+                  {expense.paidBy?.name} · {expense.splitType}
+                </p>
+              </div>
+
+              <p className="text-sm text-black font-semibold">
+                {expense.currency} {expense.totalAmount}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  ))}
+
+  {!groups.length && !loading && (
+    <div className="rounded-3xl border border-dashed p-8 text-center">
+      <p className="text-sm text-slate-500">
+        No groups yet. Start with one.
+      </p>
+    </div>
+  )}
+</section>
 
       {modalOpen ? <GroupFormModal token={token} onClose={() => setModalOpen(false)} onCreated={handleCreated} /> : null}
       {expenseModal ? (
