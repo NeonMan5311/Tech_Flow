@@ -13,6 +13,9 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [currency, setCurrency] = useState('INR')
+  const [baseCurrency, setBaseCurrency] = useState('INR')
+  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10))
+  const [isRecurring, setIsRecurring] = useState(false)
   const [paidBy, setPaidBy] = useState(group.members?.[0]?._id || '')
   const [splitType, setSplitType] = useState('equal')
   const [shareMap, setShareMap] = useState(() =>
@@ -46,8 +49,12 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
         title,
         totalAmount: Number(amount),
         currency,
+        baseCurrency,
         paidBy,
+        date: expenseDate,
         splitType,
+        isRecurring,
+        recurrenceRule: isRecurring ? { type: 'monthly', interval: 1 } : undefined,
         splitDetails:
           splitType === 'share'
             ? Object.entries(shareMap).map(([user, shares]) => ({
@@ -113,47 +120,35 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
             <div className="space-y-4">
               <div>
                 <label className="text-xs text-slate-500">Expense title</label>
-                <input
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  required
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
-                  placeholder="Hotel booking"
-                />
+                <input value={title} onChange={(event) => setTitle(event.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900" placeholder="Hotel booking" />
               </div>
               <div>
                 <label className="text-xs text-slate-500">Total amount</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  required
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
-                  placeholder="2500"
-                />
+                <input type="number" min="0" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900" placeholder="2500" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-500">Currency</label>
+                  <input value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900" placeholder="USD" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500">Base currency</label>
+                  <input value={baseCurrency} onChange={(event) => setBaseCurrency(event.target.value.toUpperCase())} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900" placeholder="INR" />
+                </div>
               </div>
               <div>
-                <label className="text-xs text-slate-500">Currency</label>
-                <input
-                  value={currency}
-                  onChange={(event) => setCurrency(event.target.value.toUpperCase())}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
-                  placeholder="INR"
-                />
+                <label className="text-xs text-slate-500">Date</label>
+                <input type="date" value={expenseDate} onChange={(event) => setExpenseDate(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900" />
               </div>
+              <label className="flex items-center gap-2 text-xs text-slate-600">
+                <input type="checkbox" checked={isRecurring} onChange={(event) => setIsRecurring(event.target.checked)} />
+                Recurring monthly expense
+              </label>
               <div>
                 <label className="text-xs text-slate-500">Paid by</label>
-                <select
-                  value={paidBy}
-                  onChange={(event) => setPaidBy(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900"
-                >
+                <select value={paidBy} onChange={(event) => setPaidBy(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900">
                   {group.members?.map((member) => (
-                    <option key={member._id} value={member._id}>
-                      {member.name}
-                    </option>
+                    <option key={member._id} value={member._id}>{member.name}</option>
                   ))}
                 </select>
               </div>
@@ -162,115 +157,25 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
             <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-4">
               <div>
                 <label className="text-xs text-slate-500">Split type</label>
-                <select
-                  value={splitType}
-                  onChange={(event) => setSplitType(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
-                >
+                <select value={splitType} onChange={(event) => setSplitType(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900">
                   {splitOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
+                    <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
               </div>
 
-              {splitType === 'share' ? (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-500">Shares per member</p>
-                  {group.members?.map((member) => (
-                    <div key={member._id} className="flex items-center justify-between gap-3">
-                      <span className="text-xs text-slate-700">{member.name}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={shareMap[member._id] ?? 1}
-                        onChange={(event) =>
-                          setShareMap((prev) => ({
-                            ...prev,
-                            [member._id]: event.target.value,
-                          }))
-                        }
-                        className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
-                      />
-                    </div>
-                  ))}
-                  <p className="text-xs text-slate-500">Total shares: {totalShares}</p>
-                </div>
-              ) : null}
-
-              {splitType === 'percentage' ? (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-500">Percent per member</p>
-                  {group.members?.map((member) => (
-                    <div key={member._id} className="flex items-center justify-between gap-3">
-                      <span className="text-xs text-slate-700">{member.name}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={percentageMap[member._id] ?? 0}
-                        onChange={(event) =>
-                          setPercentageMap((prev) => ({
-                            ...prev,
-                            [member._id]: event.target.value,
-                          }))
-                        }
-                        className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
-                      />
-                    </div>
-                  ))}
-                  <p className="text-xs text-slate-500">Total: {totalPercentage}%</p>
-                </div>
-              ) : null}
-
-              {splitType === 'item' ? (
-                <div className="space-y-3">
-                  <p className="text-xs text-slate-500">Items per member ("item1,item2 | amount")</p>
-                  {group.members?.map((member) => (
-                    <div key={member._id} className="grid gap-2">
-                      <span className="text-xs text-slate-700">{member.name}</span>
-                      <input
-                        value={itemMap[member._id] ?? ''}
-                        onChange={(event) =>
-                          setItemMap((prev) => ({
-                            ...prev,
-                            [member._id]: event.target.value,
-                          }))
-                        }
-                        className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
-                        placeholder="Pizza, Drinks | 450"
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {splitType === 'equal' ? (
-                <p className="text-xs text-slate-500">
-                  Equal split across {group.members?.length || 0} members.
-                </p>
-              ) : null}
+              {splitType === 'share' && <div className="space-y-3"><p className="text-xs text-slate-500">Shares per member</p>{group.members?.map((member) => <div key={member._id} className="flex items-center justify-between gap-3"><span className="text-xs text-slate-700">{member.name}</span><input type="number" min="0" value={shareMap[member._id] ?? 1} onChange={(event) => setShareMap((prev) => ({ ...prev, [member._id]: event.target.value }))} className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900" /></div>)}<p className="text-xs text-slate-500">Total shares: {totalShares}</p></div>}
+              {splitType === 'percentage' && <div className="space-y-3"><p className="text-xs text-slate-500">Percent per member</p>{group.members?.map((member) => <div key={member._id} className="flex items-center justify-between gap-3"><span className="text-xs text-slate-700">{member.name}</span><input type="number" min="0" max="100" value={percentageMap[member._id] ?? 0} onChange={(event) => setPercentageMap((prev) => ({ ...prev, [member._id]: event.target.value }))} className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900" /></div>)}<p className="text-xs text-slate-500">Total: {totalPercentage}%</p></div>}
+              {splitType === 'item' && <div className="space-y-3"><p className="text-xs text-slate-500">Items per member (&quot;item1,item2 | amount&quot;)</p>{group.members?.map((member) => <div key={member._id} className="grid gap-2"><span className="text-xs text-slate-700">{member.name}</span><input value={itemMap[member._id] ?? ''} onChange={(event) => setItemMap((prev) => ({ ...prev, [member._id]: event.target.value }))} className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900" placeholder="Pizza, Drinks | 450" /></div>)}</div>}
+              {splitType === 'equal' && <p className="text-xs text-slate-500">Equal split across {group.members?.length || 0} members.</p>}
             </div>
           </div>
 
           {error ? <p className="text-sm text-rose-400">{error}</p> : null}
 
           <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:opacity-60"
-            >
-              {submitting ? 'Saving…' : 'Save expense'}
-            </button>
+            <button type="button" onClick={onClose} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button>
+            <button type="submit" disabled={submitting} className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white disabled:opacity-60">{submitting ? 'Saving…' : 'Save expense'}</button>
           </div>
         </form>
       </div>

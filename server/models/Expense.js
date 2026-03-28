@@ -36,6 +36,7 @@ const expenseSchema = new mongoose.Schema(
       day: { type: Number, min: 1, max: 31 },
       interval: { type: Number, min: 1 },
     },
+    generatedOccurrences: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );
