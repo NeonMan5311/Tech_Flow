@@ -31,52 +31,51 @@ function DashboardPage({ greeting, token }) {
     loadSummary()
   }, [token])
 
-  const cards = useMemo(
+  const summaryCards = useMemo(
     () => [
-      { label: 'You Owe', value: summary.owe, tone: 'text-rose-200', bg: 'from-rose-400/20 to-transparent' },
-      { label: 'Owed To You', value: summary.owed, tone: 'text-cyan-200', bg: 'from-cyan-400/20 to-transparent' },
-      { label: 'Net Position', value: summary.net, tone: summary.net >= 0 ? 'text-emerald-200' : 'text-amber-200', bg: 'from-emerald-400/20 to-transparent' },
+      { label: 'Total you owe', value: summary.owe.toFixed(2) },
+      { label: 'Total owed to you', value: summary.owed.toFixed(2) },
+      { label: 'Net position', value: summary.net.toFixed(2) },
     ],
     [summary]
   )
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-6 pb-20 pt-8">
-      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
-        <p className="text-xs uppercase tracking-[0.3em] text-cyan-300">Member Dashboard</p>
-        <h1 className="mt-3 text-3xl font-semibold text-white">{greeting}</h1>
-        <p className="mt-2 text-sm text-slate-300">Your neutral, transparent snapshot across all groups.</p>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {cards.map((card) => (
-            <article key={card.label} className={`rounded-2xl border border-white/10 bg-gradient-to-br ${card.bg} p-5`}>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{card.label}</p>
-              <p className={`mt-2 text-3xl font-semibold ${card.tone}`}>₹{card.value.toFixed(2)}</p>
-            </article>
+    <main className="mx-auto w-full max-w-6xl px-6 pb-20">
+      <section className="grid gap-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h1 className="text-3xl font-semibold text-slate-900">{greeting}</h1>
+        <p className="text-sm text-slate-600">
+          Personal member dashboard with transparent totals and who owes whom across all your groups.
+        </p>
+        <div className="grid gap-4 md:grid-cols-3">
+          {summaryCards.map((card) => (
+            <div key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500">{card.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-900">₹{card.value}</p>
+            </div>
           ))}
         </div>
       </section>
 
-      <section className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-6">
+      <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">Who owes whom</h2>
-          {loading ? <p className="text-xs text-slate-400">Refreshing...</p> : null}
+          <h2 className="text-xl font-semibold text-slate-900">Per-member breakdown</h2>
+          {loading ? <p className="text-xs text-slate-500">Updating…</p> : null}
         </div>
-        {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {error ? <p className="mt-3 text-sm text-rose-400">{error}</p> : null}
+        <div className="mt-4 space-y-3">
           {people.map((item) => (
-            <div key={item.userId} className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-white">{item.userName}</p>
-                <p className={`text-sm font-semibold ${item.direction === 'you_owe' ? 'text-rose-200' : 'text-emerald-200'}`}>
-                  ₹{item.amount.toFixed(2)}
-                </p>
+            <div key={item.userId} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{item.userName}</p>
+                <p className="text-xs text-slate-500">{item.direction === 'you_owe' ? 'You owe' : 'Owes you'}</p>
               </div>
-              <p className="mt-1 text-xs text-slate-400">{item.direction === 'you_owe' ? 'You need to pay this member' : 'This member needs to pay you'}</p>
+              <p className={`text-sm font-semibold ${item.direction === 'you_owe' ? 'text-rose-500' : 'text-blue-600'}`}>
+                ₹{item.amount.toFixed(2)}
+              </p>
             </div>
           ))}
-          {!loading && !people.length ? <p className="text-sm text-slate-400">No pending balances yet. Clean slate ✅</p> : null}
+          {!loading && !people.length ? <p className="text-sm text-slate-500">No pending balances yet.</p> : null}
         </div>
       </section>
     </main>
