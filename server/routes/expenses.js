@@ -1,6 +1,7 @@
 const express = require("express");
 const Expense = require("../models/Expense");
 const Group = require("../models/Group");
+const Ledger = require("../models/Ledger");
 const auth = require("../middleware/auth");
 
 const router = express.Router();
@@ -118,6 +119,22 @@ router.post("/", auth, async (req, res) => {
       splitType,
       splitDetails: split.splitDetails,
     });
+
+    const ledgerEntries = split.splitDetails
+      .filter((detail) => detail.user.toString() !== paidBy.toString())
+      .map((detail) => ({
+        group: groupId,
+        expense: expense._id,
+        fromUser: detail.user,
+        toUser: paidBy,
+        amount: detail.amount,
+        currency: currency.toUpperCase(),
+        settled: false,
+      }));
+
+    if (ledgerEntries.length) {
+      await Ledger.insertMany(ledgerEntries);
+    }
 
     const populated = await Expense.findById(expense._id)
       .populate("paidBy", "name username")

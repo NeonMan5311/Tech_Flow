@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 
 const API_BASE = 'http://localhost:5000/api'
 
-function FriendsPage({ groups, loading, error, token, session }) {
+function FriendsPage({ groups, loading, error, token, session, ledgerRefreshKey }) {
   const members = groups.flatMap((group) => group.members || [])
   const unique = Array.from(new Map(members.map((m) => [m._id, m])).values())
   const [expenseMap, setExpenseMap] = useState({})
   const [expenseLoading, setExpenseLoading] = useState(false)
   const [expenseError, setExpenseError] = useState('')
   const [settlements, setSettlements] = useState([])
+  const [openLedger, setOpenLedger] = useState([])
 
   const currentUserId = session?.user?._id
 
@@ -41,6 +42,26 @@ function FriendsPage({ groups, loading, error, token, session }) {
 
     fetchExpenses()
   }, [groups, token])
+
+  useEffect(() => {
+    const fetchOpenLedger = async () => {
+      if (!token) return
+      try {
+        const response = await fetch(`${API_BASE}/ledger/open`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data?.message || 'Failed to load ledger')
+        }
+        setOpenLedger(data.entries || [])
+      } catch (err) {
+        setExpenseError(err.message)
+      }
+    }
+
+    fetchOpenLedger()
+  }, [token, ledgerRefreshKey])
 
   useEffect(() => {
     const fetchSettlements = async () => {
@@ -77,53 +98,47 @@ function FriendsPage({ groups, loading, error, token, session }) {
     const transactions = []
     const groupBalances = new Map()
 
-    Object.entries(expenseMap).forEach(([groupId, expenses]) => {
-      expenses.forEach((expense) => {
-        const paidBy = expense.paidBy?._id || expense.paidBy
-        const splitDetails = expense.splitDetails || []
-        splitDetails.forEach((detail) => {
-          const userId = detail.user?._id || detail.user
-          if (userId === paidBy) return
-          const amount = Number(detail.amount || 0)
-          if (!amount) return
+    openLedger.forEach((entry) => {
+      const fromUser = entry.fromUser?._id || entry.fromUser
+      const toUser = entry.toUser?._id || entry.toUser
+      const amount = Number(entry.amount || 0)
+      if (!amount) return
+      const groupId = entry.group?._id || entry.group
+      if (!groupBalances.has(groupId)) {
+        groupBalances.set(groupId, { owe: 0, owed: 0, currency: entry.currency })
+      }
 
-          if (!groupBalances.has(groupId)) {
-            groupBalances.set(groupId, { owe: 0, owed: 0, currency: expense.currency })
-          }
-
-          if (userId === currentUserId) {
-            balances.set(paidBy, (balances.get(paidBy) || 0) - amount)
-            groupBalances.set(groupId, {
-              ...groupBalances.get(groupId),
-              owe: groupBalances.get(groupId).owe + amount,
-              currency: expense.currency,
-            })
-            transactions.push({
-              type: 'owe',
-              friendId: paidBy,
-              title: expense.title,
-              amount,
-              currency: expense.currency,
-              groupId,
-            })
-          } else if (paidBy === currentUserId) {
-            balances.set(userId, (balances.get(userId) || 0) + amount)
-            groupBalances.set(groupId, {
-              ...groupBalances.get(groupId),
-              owed: groupBalances.get(groupId).owed + amount,
-              currency: expense.currency,
-            })
-            transactions.push({
-              type: 'owed',
-              friendId: userId,
-              title: expense.title,
-              amount,
-              currency: expense.currency,
-              groupId,
-            })
-          }
+      if (fromUser === currentUserId) {
+        balances.set(toUser, (balances.get(toUser) || 0) - amount)
+        groupBalances.set(groupId, {
+          ...groupBalances.get(groupId),
+          owe: groupBalances.get(groupId).owe + amount,
+          currency: entry.currency,
         })
-      })
+        transactions.push({
+          type: 'owe',
+          friendId: toUser,
+          title: entry.expense?.title || entry.group?.name || 'Expense',
+          amount,
+          currency: entry.currency,
+          groupId,
+        })
+      } else if (toUser === currentUserId) {
+        balances.set(fromUser, (balances.get(fromUser) || 0) + amount)
+        groupBalances.set(groupId, {
+          ...groupBalances.get(groupId),
+          owed: groupBalances.get(groupId).owed + amount,
+          currency: entry.currency,
+        })
+        transactions.push({
+          type: 'owed',
+          friendId: fromUser,
+          title: entry.expense?.title || entry.group?.name || 'Expense',
+          amount,
+          currency: entry.currency,
+          groupId,
+        })
+      }
     })
 
     settlements.forEach((settlement) => {
@@ -177,7 +192,7 @@ function FriendsPage({ groups, loading, error, token, session }) {
     }))
 
     return { owedByYou, owedToYou, transactions, totals, groupTotals }
-  }, [expenseMap, currentUserId, settlements])
+  }, [openLedger, currentUserId, settlements])
 
   const friendLookup = useMemo(
     () => Object.fromEntries(unique.map((member) => [member._id, member])),

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import GroupFormModal from '../components/groups/GroupFormModal'
 import ExpenseFormModal from '../components/groups/ExpenseFormModal'
 
-function GroupsPage({ groups, setGroups, loading, error, token }) {
+function GroupsPage({ groups, setGroups, loading, error, token, onLedgerRefresh }) {
   const [modalOpen, setModalOpen] = useState(false)
   const [expenseModal, setExpenseModal] = useState(null)
   const [expenseMap, setExpenseMap] = useState({})
@@ -41,6 +41,9 @@ function GroupsPage({ groups, setGroups, loading, error, token }) {
       [groupId]: [expense, ...(prev[groupId] || [])],
     }))
     setExpenseModal(null)
+    if (onLedgerRefresh) {
+      onLedgerRefresh()
+    }
   }
 
   return (
@@ -67,41 +70,75 @@ function GroupsPage({ groups, setGroups, loading, error, token }) {
         ) : null}
         {error ? <p className="text-sm text-rose-400">{error}</p> : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           {groups.map((group) => (
-            <div key={group._id} className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent opacity-0 transition group-hover:opacity-100" />
-              <div className="flex items-start justify-between">
+            <div key={group._id} className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-200 via-blue-500 to-indigo-500 opacity-80" />
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-lg font-semibold text-slate-900">{group.name}</p>
-                  <p className="text-xs text-slate-500">{group.members?.length || 0} members</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Group</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-900">{group.name}</p>
+                  <p className="mt-1 text-sm text-slate-500">{group.members?.length || 0} members</p>
                 </div>
-                <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] uppercase text-blue-600">
-                  Active
-                </span>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {group.members?.map((member) => (
-                  <span key={member._id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
-                    {member.name}
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] uppercase text-blue-600">
+                    Active
                   </span>
-                ))}
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] uppercase text-slate-500">
+                    Shared
+                  </span>
+                </div>
               </div>
-              <div className="mt-5 flex flex-wrap gap-3 text-xs">
-                <button
-                  type="button"
-                  onClick={() => loadExpenses(group._id)}
-                  className="rounded-full border border-slate-200 px-4 py-2 text-slate-600 transition hover:border-slate-300"
-                >
-                  {expenseLoading[group._id] ? 'Loading…' : 'View expenses'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExpenseModal(group)}
-                  className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-blue-700 transition hover:border-blue-300"
-                >
-                  Add expense
-                </button>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Recent activity</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-900">
+                    {(expenseMap[group._id] || []).length ? (expenseMap[group._id] || [])[0]?.title : 'No expenses yet'}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {(expenseMap[group._id] || []).length
+                      ? `${(expenseMap[group._id] || [])[0]?.currency} ${(expenseMap[group._id] || [])[0]?.totalAmount}`
+                      : 'Add your first expense to get started.'}
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Members</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {group.members?.slice(0, 5).map((member) => (
+                      <span key={member._id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
+                        {member.name}
+                      </span>
+                    ))}
+                    {group.members?.length > 5 ? (
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500">
+                        +{group.members.length - 5} more
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => loadExpenses(group._id)}
+                    className="rounded-full border border-slate-200 px-4 py-2 text-slate-600 transition hover:border-slate-300"
+                  >
+                    {expenseLoading[group._id] ? 'Loading…' : 'View expenses'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpenseModal(group)}
+                    className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-blue-700 transition hover:border-blue-300"
+                  >
+                    Add expense
+                  </button>
+                </div>
+                <div className="text-xs text-slate-400">
+                  Created • {group.members?.length || 0} people
+                </div>
               </div>
 
               {expenseError[group._id] ? (
@@ -109,8 +146,9 @@ function GroupsPage({ groups, setGroups, loading, error, token }) {
               ) : null}
 
               {(expenseMap[group._id] || []).length ? (
-                <div className="mt-4 space-y-3">
-                  {(expenseMap[group._id] || []).map((expense) => (
+                <div className="mt-6 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Latest expenses</p>
+                  {(expenseMap[group._id] || []).slice(0, 3).map((expense) => (
                     <div
                       key={expense._id}
                       className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
