@@ -1,68 +1,82 @@
-const summaryCards = [
-  { label: 'Total you owe', value: '₹1,850' },
-  { label: 'Total owed to you', value: '₹3,450' },
-  { label: 'Groups active', value: '4' },
-]
+import { useEffect, useMemo, useState } from 'react'
 
-const recentActivity = [
-  { title: 'Goa Trip · Hotel', subtitle: 'Paid by you · split by shares', amount: '+₹1,200' },
-  { title: 'Office Lunch', subtitle: 'Paid by Priya · equal split', amount: '-₹350' },
-  { title: 'Utilities', subtitle: 'Recurring on 5th monthly', amount: '-₹480' },
-]
+const API_BASE = 'http://localhost:5000/api'
 
-const settleItems = [
-  { name: 'Rahul', amount: '₹1,150', status: 'You will receive' },
-  { name: 'Priya', amount: '₹700', status: 'You owe' },
-]
+function DashboardPage({ greeting, token }) {
+  const [summary, setSummary] = useState({ owe: 0, owed: 0, net: 0 })
+  const [people, setPeople] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-function DashboardPage({ greeting }) {
+  useEffect(() => {
+    const loadSummary = async () => {
+      if (!token) return
+      setLoading(true)
+      setError('')
+      try {
+        const response = await fetch(`${API_BASE}/expenses/summary/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data?.message || 'Failed to load dashboard summary')
+        setSummary(data.summary || { owe: 0, owed: 0, net: 0 })
+        setPeople(data.people || [])
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadSummary()
+  }, [token])
+
+  const cards = useMemo(
+    () => [
+      { label: 'You Owe', value: summary.owe, tone: 'text-rose-200', bg: 'from-rose-400/20 to-transparent' },
+      { label: 'Owed To You', value: summary.owed, tone: 'text-cyan-200', bg: 'from-cyan-400/20 to-transparent' },
+      { label: 'Net Position', value: summary.net, tone: summary.net >= 0 ? 'text-emerald-200' : 'text-amber-200', bg: 'from-emerald-400/20 to-transparent' },
+    ],
+    [summary]
+  )
+
   return (
-    <main className="mx-auto w-full max-w-6xl px-6 pb-20">
-      <section className="grid gap-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-3xl font-semibold text-slate-900">{greeting}</h1>
-        <p className="text-sm text-slate-600">
-          Here’s your consolidated view of group balances, upcoming expenses, and settle-up actions.
-        </p>
-        <div className="grid gap-4 md:grid-cols-3">
-          {summaryCards.map((card) => (
-            <div key={card.label} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs uppercase tracking-wide text-slate-500">{card.label}</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-900">{card.value}</p>
-            </div>
+    <main className="mx-auto w-full max-w-7xl px-6 pb-20 pt-8">
+      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8 backdrop-blur">
+        <p className="text-xs uppercase tracking-[0.3em] text-cyan-300">Member Dashboard</p>
+        <h1 className="mt-3 text-3xl font-semibold text-white">{greeting}</h1>
+        <p className="mt-2 text-sm text-slate-300">Your neutral, transparent snapshot across all groups.</p>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {cards.map((card) => (
+            <article key={card.label} className={`rounded-2xl border border-white/10 bg-gradient-to-br ${card.bg} p-5`}>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{card.label}</p>
+              <p className={`mt-2 text-3xl font-semibold ${card.tone}`}>₹{card.value.toFixed(2)}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">Recent activity</h2>
-          {recentActivity.map((item) => (
-            <div key={item.title} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                <p className="text-xs text-slate-500">{item.subtitle}</p>
-              </div>
-              <p className={`text-sm font-semibold ${item.amount.startsWith('+') ? 'text-blue-600' : 'text-rose-500'}`}>
-                {item.amount}
-              </p>
-            </div>
-          ))}
+      <section className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Who owes whom</h2>
+          {loading ? <p className="text-xs text-slate-400">Refreshing...</p> : null}
         </div>
+        {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-slate-900">Settle up</h2>
-          {settleItems.map((item) => (
-            <div key={item.name} className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {people.map((item) => (
+            <div key={item.userId} className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-                <p className="text-sm font-semibold text-blue-600">{item.amount}</p>
+                <p className="text-sm font-semibold text-white">{item.userName}</p>
+                <p className={`text-sm font-semibold ${item.direction === 'you_owe' ? 'text-rose-200' : 'text-emerald-200'}`}>
+                  ₹{item.amount.toFixed(2)}
+                </p>
               </div>
-              <p className="mt-1 text-xs text-slate-500">{item.status}</p>
-              <button className="mt-3 w-full rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300">
-                Send reminder
-              </button>
+              <p className="mt-1 text-xs text-slate-400">{item.direction === 'you_owe' ? 'You need to pay this member' : 'This member needs to pay you'}</p>
             </div>
           ))}
+          {!loading && !people.length ? <p className="text-sm text-slate-400">No pending balances yet. Clean slate ✅</p> : null}
         </div>
       </section>
     </main>

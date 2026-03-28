@@ -2,26 +2,28 @@ import BrandMark from '../BrandMark'
 
 function MarketingHeader({ onOpenModal }) {
   return (
-    <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
-      <BrandMark subtitle="Simplify shared expenses" />
-      <nav className="hidden items-center gap-6 text-sm text-slate-500 md:flex">
-        <a className="hover:text-blue-600" href="#features">Features</a>
-        <a className="hover:text-blue-600" href="#workflow">Workflow</a>
-        <a className="hover:text-blue-600" href="#pricing">Pricing</a>
-      </nav>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => onOpenModal('login')}
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-slate-300"
-        >
-          Log in
-        </button>
-        <button
-          onClick={() => onOpenModal('signup')}
-          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-blue-500"
-        >
-          Sign up
-        </button>
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
+        <BrandMark subtitle="Fair splits for messy real life" />
+        <nav className="hidden items-center gap-6 text-sm text-slate-400 md:flex">
+          <a className="hover:text-cyan-300" href="#features">Features</a>
+          <a className="hover:text-cyan-300" href="#workflow">Workflow</a>
+          <a className="hover:text-cyan-300" href="#judge">Why judges like this</a>
+        </nav>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onOpenModal('login')}
+            className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10"
+          >
+            Log in
+          </button>
+          <button
+            onClick={() => onOpenModal('signup')}
+            className="rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:brightness-110"
+          >
+            Start free
+          </button>
+        </div>
       </div>
     </header>
   )
