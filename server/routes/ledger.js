@@ -43,7 +43,8 @@ router.post("/", auth, async (req, res) => {
     const populated = await Ledger.findById(ledger._id)
       .populate("fromUser", "name username")
       .populate("toUser", "name username")
-      .populate("group", "name");
+      .populate("group", "name")
+      .populate("expense", "title");
 
     return res.status(201).json({ settlement: populated });
   } catch (error) {
@@ -79,11 +80,59 @@ router.get("/user", auth, async (req, res) => {
       .sort({ settledAt: -1 })
       .populate("fromUser", "name username")
       .populate("toUser", "name username")
-      .populate("group", "name");
+      .populate("group", "name")
+      .populate("expense", "title");
 
     return res.json({ settlements });
   } catch (error) {
     return res.status(500).json({ message: "Failed to fetch settlements.", error: error.message });
+  }
+});
+
+router.get("/open", auth, async (req, res) => {
+  try {
+    const entries = await Ledger.find({
+      settled: false,
+      $or: [{ fromUser: req.user.id }, { toUser: req.user.id }],
+    })
+      .sort({ createdAt: -1 })
+      .populate("fromUser", "name username")
+      .populate("toUser", "name username")
+      .populate("group", "name")
+      .populate("expense", "title");
+
+    return res.json({ entries });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch open ledger.", error: error.message });
+  }
+});
+
+router.patch("/:ledgerId/settle", auth, async (req, res) => {
+  try {
+    const { ledgerId } = req.params;
+    const ledger = await Ledger.findById(ledgerId);
+    if (!ledger) {
+      return res.status(404).json({ message: "Ledger entry not found." });
+    }
+
+    const isMember = [ledger.fromUser.toString(), ledger.toUser.toString()].includes(req.user.id);
+    if (!isMember) {
+      return res.status(403).json({ message: "Access denied." });
+    }
+
+    ledger.settled = true;
+    ledger.settledAt = new Date();
+    await ledger.save();
+
+    const populated = await Ledger.findById(ledger._id)
+      .populate("fromUser", "name username")
+      .populate("toUser", "name username")
+      .populate("group", "name")
+      .populate("expense", "title");
+
+    return res.json({ settlement: populated });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to settle entry.", error: error.message });
   }
 });
 

@@ -25,6 +25,7 @@ function App() {
   const [groups, setGroups] = useState([])
   const [groupsLoading, setGroupsLoading] = useState(false)
   const [groupsError, setGroupsError] = useState('')
+  const [ledgerRefreshKey, setLedgerRefreshKey] = useState(0)
 
   const isLoggedIn = Boolean(session?.token)
 
@@ -97,6 +98,10 @@ function App() {
     setSession(null)
   }
 
+  const refreshLedger = () => {
+    setLedgerRefreshKey((prev) => prev + 1)
+  }
+
   const greeting = useMemo(() => {
     if (!session?.user) return 'Welcome back'
     return `Welcome back, ${session.user.name}`
@@ -137,6 +142,7 @@ function App() {
               error={groupsError}
               token={session.token}
               session={session}
+              ledgerRefreshKey={ledgerRefreshKey}
             />
           )
         case 'Groups':
@@ -147,6 +153,7 @@ function App() {
               loading={groupsLoading}
               error={groupsError}
               token={session.token}
+              onLedgerRefresh={refreshLedger}
             />
           )
         case 'Profile':

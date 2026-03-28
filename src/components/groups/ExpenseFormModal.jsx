@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Wheel } from 'spin-wheel'
 
 const API_BASE = 'http://localhost:5000/api'
 
@@ -29,6 +30,10 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
   )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [isSpinning, setIsSpinning] = useState(false)
+  const [selectedSpinner, setSelectedSpinner] = useState(null)
+  const wheelRef = useRef(null)
+  const wheelInstanceRef = useRef(null)
 
   const totalShares = useMemo(
     () => Object.values(shareMap).reduce((sum, value) => sum + Number(value || 0), 0),
@@ -103,6 +108,58 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
     }
   }
 
+  const membersCount = group.members?.length || 0
+
+  useEffect(() => {
+    if (!wheelRef.current || !membersCount) return
+    if (wheelInstanceRef.current) {
+      wheelInstanceRef.current.remove()
+    }
+
+    const palette = ['#F97316', '#38BDF8', '#A855F7', '#22C55E', '#F43F5E', '#EAB308', '#6366F1', '#14B8A6']
+    const items = group.members.map((member, index) => ({
+      label: member.name,
+      value: member._id,
+      backgroundColor: palette[index % palette.length],
+      labelColor: '#0F172A',
+    }))
+
+    const wheel = new Wheel(wheelRef.current, {
+      items,
+      itemLabelRadius: 0.9,
+      itemLabelRadiusMax: 0.2,
+      itemLabelAlign: 'right',
+      itemLabelFont: 'Inter, sans-serif',
+      lineWidth: 2,
+      lineColor: '#E2E8F0',
+      borderColor: '#CBD5F5',
+      borderWidth: 2,
+      isInteractive: false,
+      pointerAngle: 0,
+    })
+
+    wheel.onRest = ({ currentIndex }) => {
+      const member = group.members?.[currentIndex]
+      setSelectedSpinner(member || null)
+      setPaidBy(member?._id || '')
+      setIsSpinning(false)
+    }
+
+    wheelInstanceRef.current = wheel
+
+    return () => {
+      wheel.remove()
+      wheelInstanceRef.current = null
+    }
+  }, [group.members, membersCount])
+
+  const handleSpin = () => {
+    if (!membersCount || isSpinning || !wheelInstanceRef.current) return
+    const selectedIndex = Math.floor(Math.random() * membersCount)
+    setIsSpinning(true)
+    wheelInstanceRef.current.spinToItem(selectedIndex, 3200, true, 4, 1)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-10 backdrop-blur">
       <div className="w-full max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
@@ -151,6 +208,37 @@ function ExpenseFormModal({ token, group, onClose, onCreated }) {
                     <option key={member._id} value={member._id}>{member.name}</option>
                   ))}
                 </select>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-600">Spin the bottle</p>
+                    <p className="mt-2 text-sm text-slate-600">Pick a random payer from the group.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSpin}
+                    disabled={isSpinning || !membersCount}
+                    className="rounded-full border border-blue-200 bg-white px-4 py-2 text-xs font-semibold text-blue-600 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSpinning ? 'Spinning…' : 'Spin'}
+                  </button>
+                </div>
+                <div className="mt-4 flex items-center gap-4">
+                  <div className="relative flex h-44 w-44 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
+                    <div className="absolute -top-2 h-4 w-4 rotate-45 bg-blue-500" />
+                    <div ref={wheelRef} className="h-40 w-40" />
+                    <div className="absolute top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-blue-600" />
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {selectedSpinner ? (
+                      <p className="font-semibold text-slate-900">{selectedSpinner.name} selected</p>
+                    ) : (
+                      <p className="text-slate-500">Spin to pick a payer.</p>
+                    )}
+                    <p className="text-xs text-slate-400">Members: {membersCount || 0}</p>
+                  </div>
+                </div>
               </div>
             </div>
 
